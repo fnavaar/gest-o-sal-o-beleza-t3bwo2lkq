@@ -63,6 +63,8 @@ export default function Balanco() {
     return 0
   }
 
+  const totalFaturado = services.reduce((acc, curr) => acc + curr.valor, 0)
+
   const nailsEarnings = services
     .filter((s) => s.tipo_servico === 'Unhas')
     .reduce((acc, curr) => acc + calculateEarnings(curr), 0)
@@ -71,7 +73,8 @@ export default function Balanco() {
     .filter((s) => s.tipo_servico === 'Sobrancelha')
     .reduce((acc, curr) => acc + calculateEarnings(curr), 0)
 
-  const totalEarnings = nailsEarnings + eyebrowEarnings
+  const totalGanho = nailsEarnings + eyebrowEarnings
+  const quantidadeServicos = services.length
 
   const handleExport = () => {
     const headers = ['Data', 'Cliente', 'Tipo', 'Valor do Serviço', 'Valor Ganho']
@@ -146,58 +149,79 @@ export default function Balanco() {
           </div>
         ) : loading ? (
           <div className="space-y-4 animate-pulse">
-            <div className="grid grid-cols-1 gap-4">
-              <Skeleton className="h-[104px] w-full rounded-xl" />
-              <div className="grid grid-cols-2 gap-4">
-                <Skeleton className="h-[90px] w-full rounded-xl" />
-                <Skeleton className="h-[90px] w-full rounded-xl" />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-[104px] w-full rounded-xl col-span-2" />
+              <Skeleton className="h-[104px] w-full rounded-xl col-span-2 sm:col-span-1" />
+              <Skeleton className="h-[104px] w-full rounded-xl col-span-2 sm:col-span-1" />
+              <Skeleton className="h-[90px] w-full rounded-xl" />
+              <Skeleton className="h-[90px] w-full rounded-xl" />
             </div>
             <Skeleton className="h-64 w-full rounded-xl" />
           </div>
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 gap-4">
-              <Card className="bg-primary text-primary-foreground border-transparent shadow-md">
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="col-span-2 bg-primary text-primary-foreground border-transparent shadow-md">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium opacity-90">
-                    Total Ganho na Semana
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium opacity-90">Total Faturado</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold tracking-tight">
-                    {formatCurrency(totalEarnings)}
+                    {formatCurrency(totalFaturado)}
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Card className="shadow-sm border-gray-200/60">
-                  <CardHeader className="pb-2 px-4 pt-4">
-                    <CardTitle className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                      Unhas (60%)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4">
-                    <div className="text-xl font-bold text-gray-800">
-                      {formatCurrency(nailsEarnings)}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm border-gray-200/60">
-                  <CardHeader className="pb-2 px-4 pt-4">
-                    <CardTitle className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                      Sobrancelha (50%)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4">
-                    <div className="text-xl font-bold text-gray-800">
-                      {formatCurrency(eyebrowEarnings)}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card className="col-span-2 sm:col-span-1 shadow-sm border-gray-200/60">
+                <CardHeader className="pb-2 px-4 pt-4">
+                  <CardTitle className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Total Ganho
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {formatCurrency(totalGanho)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="col-span-2 sm:col-span-1 shadow-sm border-gray-200/60">
+                <CardHeader className="pb-2 px-4 pt-4">
+                  <CardTitle className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Qtd de Serviços
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="text-2xl font-bold text-gray-800">{quantidadeServicos}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm border-gray-200/60">
+                <CardHeader className="pb-2 px-4 pt-4">
+                  <CardTitle className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Unhas (60%)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="text-xl font-bold text-gray-800">
+                    {formatCurrency(nailsEarnings)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm border-gray-200/60">
+                <CardHeader className="pb-2 px-4 pt-4">
+                  <CardTitle className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Sobrancelha (50%)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="text-xl font-bold text-gray-800">
+                    {formatCurrency(eyebrowEarnings)}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Details Table */}
@@ -214,7 +238,7 @@ export default function Balanco() {
                   className="h-8 text-xs font-medium bg-white"
                 >
                   <Download className="w-3.5 h-3.5 mr-1.5" />
-                  Exportar relatório
+                  Exportar
                 </Button>
               </CardHeader>
               <CardContent className="p-0 overflow-x-auto">
@@ -223,7 +247,7 @@ export default function Balanco() {
                     <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                       <Wallet className="w-6 h-6 text-gray-400" />
                     </div>
-                    Nenhum serviço registrado nesta semana.
+                    Nenhum dado encontrado para este período.
                   </div>
                 ) : (
                   <Table>
@@ -233,10 +257,10 @@ export default function Balanco() {
                         <TableHead className="whitespace-nowrap text-xs">Cliente</TableHead>
                         <TableHead className="whitespace-nowrap text-xs">Tipo</TableHead>
                         <TableHead className="whitespace-nowrap text-xs text-right">
-                          Valor do Serviço
+                          Valor
                         </TableHead>
                         <TableHead className="whitespace-nowrap text-xs text-right text-emerald-600 font-semibold">
-                          Valor Ganho
+                          Ganho
                         </TableHead>
                       </TableRow>
                     </TableHeader>
