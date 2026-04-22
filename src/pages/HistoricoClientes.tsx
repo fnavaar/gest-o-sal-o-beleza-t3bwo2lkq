@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   Search,
   Star,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { getClientes, type ClienteRecord } from '@/services/clientes'
 import { getServicos, type ServicoRecord } from '@/services/servicos'
+import { useRealtime } from '@/hooks/use-realtime'
 import { formatCurrency, formatDate, formatPhone } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -44,7 +45,7 @@ interface ClientStats {
   mostFrequentService: string
 }
 
-const calcProfit = (s: ServicoRecord) => s.valor * (s.tipo_servico === 'Unhas' ? 0.6 : 0.5)
+const calcProfit = (s: ServicoRecord) => Number(s.valor) * (s.tipo_servico === 'Unhas' ? 0.6 : 0.5)
 
 export default function HistoricoClientes() {
   const [clientes, setClientes] = useState<ClienteRecord[]>([])
@@ -55,9 +56,9 @@ export default function HistoricoClientes() {
   const [search, setSearch] = useState('')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
   const [sortBy, setSortBy] = useState<'name' | 'spent' | 'last_visit'>('last_visit')
-  const [selectedClient, setSelectedClient] = useState<ClientStats | null>(null)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchInitialData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -69,11 +70,24 @@ export default function HistoricoClientes() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  const fetchBackgroundData = useCallback(async () => {
+    try {
+      const [cRes, sRes] = await Promise.all([getClientes(), getServicos()])
+      setClientes(cRes)
+      setServicos(sRes)
+    } catch (err) {
+      console.error('Background sync failed', err)
+    }
+  }, [])
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchInitialData()
+  }, [fetchInitialData])
+
+  useRealtime('clientes', fetchBackgroundData)
+  useRealtime('servicos', fetchBackgroundData)
 
   const clientStats = useMemo(() => {
     const statsMap = new Map<string, ClientStats>()
@@ -95,12 +109,15 @@ export default function HistoricoClientes() {
       if (stats) {
         stats.services.push(s)
         stats.servicesCount++
-        stats.totalSpent += s.valor
+        stats.totalSpent += Number(s.valor)
         stats.totalProfit += calcProfit(s)
-        if (!stats.lastVisit || new Date(s.data_servico) > new Date(stats.lastVisit)) {
+
+        const serviceDate = new Date(s.data_servico).getTime()
+
+        if (!stats.lastVisit || serviceDate > new Date(stats.lastVisit).getTime()) {
           stats.lastVisit = s.data_servico
         }
-        if (!stats.firstVisit || new Date(s.data_servico) < new Date(stats.firstVisit)) {
+        if (!stats.firstVisit || serviceDate < new Date(stats.firstVisit).getTime()) {
           stats.firstVisit = s.data_servico
         }
       }
@@ -138,11 +155,16 @@ export default function HistoricoClientes() {
     return result
   }, [clientStats, search, onlyFavorites, sortBy])
 
+  const selectedClient = useMemo(() => {
+    if (!selectedClientId) return null
+    return clientStats.find((c) => c.client.id === selectedClientId) || null
+  }, [selectedClientId, clientStats])
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 space-y-4 text-center">
         <p className="text-destructive font-medium">{error}</p>
-        <Button onClick={fetchData}>Tentar Novamente</Button>
+        <Button onClick={fetchInitialData}>Tentar Novamente</Button>
       </div>
     )
   }
@@ -194,7 +216,7 @@ export default function HistoricoClientes() {
             <Card
               key={cs.client.id}
               className="cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => setSelectedClient(cs)}
+              onClick={() => setSelectedClientId(cs.client.id!)}
             >
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
@@ -222,7 +244,7 @@ export default function HistoricoClientes() {
         )}
       </div>
 
-      <Sheet open={!!selectedClient} onOpenChange={(o) => !o && setSelectedClient(null)}>
+      <Sheet open={!!selectedClient} onOpenChange={(o) => !o && setSelectedClientId(null)}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto pb-10" side="right">
           {selectedClient && (
             <>
@@ -308,7 +330,7 @@ export default function HistoricoClientes() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium">{formatCurrency(s.valor)}</p>
+                            <p className="text-sm font-medium">{formatCurrency(Number(s.valor))}</p>
                             <p className="text-xs text-green-600 font-medium">
                               +{formatCurrency(calcProfit(s))}
                             </p>
