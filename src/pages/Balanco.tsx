@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format, parseISO, isSameWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Download, AlertCircle, RefreshCcw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Download, AlertCircle, RefreshCcw, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
