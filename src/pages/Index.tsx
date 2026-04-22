@@ -102,14 +102,24 @@ export default function Index() {
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-5 py-4 flex flex-col gap-4 shadow-sm">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Minhas Clientes</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={signOut}
-            className="text-gray-400 hover:text-red-500"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={openAdd}
+              size="sm"
+              className="bg-primary hover:bg-primary/90 text-white rounded-lg font-semibold shadow-sm h-9 px-3"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Novo Registro
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              className="text-gray-400 hover:text-red-500 h-9 w-9"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -130,7 +140,7 @@ export default function Index() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-5 pb-24 relative">
+      <main className="flex-1 overflow-y-auto p-5 pb-6 relative">
         {isLoading ? (
           <div className="flex flex-col gap-3">
             {[1, 2, 3, 4].map((i) => (
@@ -179,15 +189,6 @@ export default function Index() {
           </div>
         )}
       </main>
-
-      <div className="absolute bottom-6 w-full flex justify-end px-6 pointer-events-none z-30">
-        <Button
-          className="h-14 w-14 rounded-full shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all pointer-events-auto flex items-center justify-center p-0"
-          onClick={openAdd}
-        >
-          <Plus className="h-7 w-7 text-white" />
-        </Button>
-      </div>
 
       <ClientFormModal
         isOpen={isFormOpen}
