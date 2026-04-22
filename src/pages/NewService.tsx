@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Users, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/hooks/use-auth'
+import { useRealtime } from '@/hooks/use-realtime'
+import { createServico } from '@/services/servicos'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -32,6 +35,8 @@ export default function NewService() {
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
     return now.toISOString().slice(0, 16)
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { user } = useAuth()
 
   const loadClientes = async () => {
     try {
@@ -50,18 +55,35 @@ export default function NewService() {
     loadClientes()
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!clienteId || !tipo || !valor || !dataHora) return
+  useRealtime('clientes', () => {
+    loadClientes()
+  })
 
-    // Mock save behavior
-    toast.success('Serviço registrado com sucesso')
-    setClienteId('')
-    setTipo('')
-    setValor('')
-    const now = new Date()
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
-    setDataHora(now.toISOString().slice(0, 16))
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!clienteId || !tipo || !valor || !dataHora || !user?.id) return
+
+    setIsSubmitting(true)
+    try {
+      await createServico({
+        usuario_id: user.id,
+        cliente_id: clienteId,
+        tipo_servico: tipo,
+        valor: parseFloat(valor.toString().replace(',', '.')),
+        data_servico: new Date(dataHora).toISOString(),
+      })
+      toast.success('Serviço registrado com sucesso')
+      setClienteId('')
+      setTipo('')
+      setValor('')
+      const now = new Date()
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+      setDataHora(now.toISOString().slice(0, 16))
+    } catch (err) {
+      toast.error('Erro ao registrar serviço. Tente novamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const isFormValid = clienteId && tipo && valor && dataHora
@@ -191,10 +213,10 @@ export default function NewService() {
             <div className="pt-6 mt-4">
               <Button
                 type="submit"
-                disabled={!isFormValid}
+                disabled={!isFormValid || isSubmitting}
                 className="w-full h-14 rounded-2xl text-base font-medium shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
               >
-                Registrar serviço
+                {isSubmitting ? 'Registrando...' : 'Registrar serviço'}
               </Button>
             </div>
           </form>
