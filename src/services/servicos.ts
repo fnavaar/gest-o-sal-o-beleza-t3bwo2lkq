@@ -32,9 +32,9 @@ export const getServicos = () => {
   })
 }
 
-export const getServicosByDateRange = (startDate: string, endDate: string) => {
+export const getServicosByDateRange = (startDate: string, endDate: string, userId: string) => {
   return pb.collection('servicos').getFullList<ServicoRecord>({
-    filter: `data_servico >= '${startDate}' && data_servico <= '${endDate}'`,
+    filter: `data_servico >= '${startDate}' && data_servico <= '${endDate}' && usuario_id = '${userId}'`,
     sort: '-data_servico',
     expand: 'cliente_id',
   })

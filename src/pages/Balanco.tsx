@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format, parseISO, isSameWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Download, AlertCircle, RefreshCcw, Wallet } from 'lucide-react'
@@ -15,31 +15,35 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { getServicosByDateRange, ServicoRecord } from '@/services/servicos'
 import { useRealtime } from '@/hooks/use-realtime'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Balanco() {
+  const { user } = useAuth()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [services, setServices] = useState<ServicoRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
-  const weekStart = startOfWeek(currentDate) // Sunday
-  const weekEnd = endOfWeek(currentDate) // Saturday
+  const weekStart = useMemo(() => startOfWeek(currentDate), [currentDate])
+  const weekEnd = useMemo(() => endOfWeek(currentDate), [currentDate])
+
+  const weekStartStr = useMemo(() => weekStart.toISOString(), [weekStart])
+  const weekEndStr = useMemo(() => weekEnd.toISOString(), [weekEnd])
 
   const loadData = useCallback(async () => {
+    if (!user?.id) return
     setLoading(true)
     setError(false)
     try {
-      const startStr = weekStart.toISOString()
-      const endStr = weekEnd.toISOString()
-      const data = await getServicosByDateRange(startStr, endStr)
-      setServices(data)
+      const data = await getServicosByDateRange(weekStartStr, weekEndStr, user.id)
+      setServices(data || [])
     } catch (err) {
       console.error('Failed to load services:', err)
       setError(true)
     } finally {
       setLoading(false)
     }
-  }, [weekStart, weekEnd])
+  }, [weekStartStr, weekEndStr, user?.id])
 
   useEffect(() => {
     loadData()
@@ -49,28 +53,29 @@ export default function Balanco() {
     loadData()
   })
 
-  const prevWeek = () => setCurrentDate(subWeeks(currentDate, 1))
-  const nextWeek = () => setCurrentDate(addWeeks(currentDate, 1))
+  const prevWeek = () => setCurrentDate((prev) => subWeeks(prev, 1))
+  const nextWeek = () => setCurrentDate((prev) => addWeeks(prev, 1))
   const currentWeek = () => setCurrentDate(new Date())
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
   }
 
   const calculateEarnings = (service: ServicoRecord) => {
-    if (service.tipo_servico === 'Unhas') return service.valor * 0.6
-    if (service.tipo_servico === 'Sobrancelha') return service.valor * 0.5
+    const valor = service?.valor || 0
+    if (service?.tipo_servico === 'Unhas') return valor * 0.6
+    if (service?.tipo_servico === 'Sobrancelha') return valor * 0.5
     return 0
   }
 
-  const totalFaturado = services.reduce((acc, curr) => acc + curr.valor, 0)
+  const totalFaturado = services.reduce((acc, curr) => acc + (curr?.valor || 0), 0)
 
   const nailsEarnings = services
-    .filter((s) => s.tipo_servico === 'Unhas')
+    .filter((s) => s?.tipo_servico === 'Unhas')
     .reduce((acc, curr) => acc + calculateEarnings(curr), 0)
 
   const eyebrowEarnings = services
-    .filter((s) => s.tipo_servico === 'Sobrancelha')
+    .filter((s) => s?.tipo_servico === 'Sobrancelha')
     .reduce((acc, curr) => acc + calculateEarnings(curr), 0)
 
   const totalGanho = nailsEarnings + eyebrowEarnings
@@ -79,10 +84,10 @@ export default function Balanco() {
   const handleExport = () => {
     const headers = ['Data', 'Cliente', 'Tipo', 'Valor do Serviço', 'Valor Ganho']
     const rows = services.map((s) => [
-      format(parseISO(s.data_servico), 'dd/MM/yyyy HH:mm'),
+      s.data_servico ? format(parseISO(s.data_servico), 'dd/MM/yyyy HH:mm') : '—',
       s.expand?.cliente_id?.nome || 'Desconhecido',
-      s.tipo_servico,
-      s.valor.toFixed(2).replace('.', ','),
+      s.tipo_servico || '—',
+      (s.valor || 0).toFixed(2).replace('.', ','),
       calculateEarnings(s).toFixed(2).replace('.', ','),
     ])
 
@@ -135,7 +140,7 @@ export default function Balanco() {
             <div>
               <h3 className="font-semibold text-lg text-gray-900">Erro ao carregar dados</h3>
               <p className="text-sm text-gray-500 mt-1">
-                Não foi possível buscar o balanço da semana.
+                Erro ao carregar os dados financeiros. Por favor, tente novamente.
               </p>
             </div>
             <Button
@@ -144,7 +149,7 @@ export default function Balanco() {
               className="mt-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
             >
               <RefreshCcw className="w-4 h-4 mr-2" />
-              Tentar novamente
+              Tentar Novamente
             </Button>
           </div>
         ) : loading ? (
@@ -231,7 +236,7 @@ export default function Balanco() {
                     <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                       <Wallet className="w-6 h-6 text-gray-400" />
                     </div>
-                    Nenhum dado encontrado para este período.
+                    Nenhum serviço encontrado para este período
                   </div>
                 ) : (
                   <Table>
@@ -255,13 +260,15 @@ export default function Balanco() {
                           className="hover:bg-gray-50/50 transition-colors"
                         >
                           <TableCell className="whitespace-nowrap text-[13px] text-gray-500">
-                            {format(parseISO(service.data_servico), 'dd/MM/yy', { locale: ptBR })}
+                            {service.data_servico
+                              ? format(parseISO(service.data_servico), 'dd/MM/yy', { locale: ptBR })
+                              : '—'}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-[13px] font-medium text-gray-800">
                             {service.expand?.cliente_id?.nome || '—'}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-[13px] text-gray-500">
-                            {service.tipo_servico}
+                            {service.tipo_servico || '—'}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-right text-[13px] text-gray-600">
                             {formatCurrency(service.valor)}
