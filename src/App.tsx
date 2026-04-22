@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
+import NewService from './pages/NewService'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 
@@ -31,6 +32,7 @@ const App = () => (
             }
           >
             <Route path="/" element={<Index />} />
+            <Route path="/registrar-servico" element={<NewService />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
