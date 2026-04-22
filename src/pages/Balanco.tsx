@@ -22,8 +22,8 @@ export default function Balanco() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }) // Monday
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 }) // Sunday
+  const weekStart = startOfWeek(currentDate) // Sunday
+  const weekEnd = endOfWeek(currentDate) // Saturday
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -115,7 +115,7 @@ export default function Balanco() {
               {format(weekStart, 'dd MMM', { locale: ptBR })} -{' '}
               {format(weekEnd, 'dd MMM', { locale: ptBR })}
             </span>
-            {!isSameWeek(currentDate, new Date(), { weekStartsOn: 1 }) && (
+            {!isSameWeek(currentDate, new Date()) && (
               <button
                 onClick={currentWeek}
                 className="text-[11px] font-medium text-primary hover:underline mt-0.5"
@@ -160,69 +160,53 @@ export default function Balanco() {
           </div>
         ) : (
           <>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="col-span-2 bg-primary text-primary-foreground border-transparent shadow-md">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium opacity-90">Total Faturado</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold tracking-tight">
-                    {formatCurrency(totalFaturado)}
+            {/* Calculator Card */}
+            <Card className="col-span-2 shadow-sm border-gray-200/60 overflow-hidden mb-4">
+              <CardHeader className="bg-primary text-primary-foreground py-4 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-lg font-bold">Calculadora de Comissões</CardTitle>
+                <div className="text-xs bg-primary-foreground/20 px-2.5 py-1 rounded-full font-medium flex items-center">
+                  {quantidadeServicos} serviços
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x border-b">
+                  <div className="p-5 flex flex-col items-center justify-center bg-gray-50/50">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 text-center">
+                      Produção Total
+                    </span>
+                    <span className="text-3xl font-bold text-gray-900">
+                      {formatCurrency(totalFaturado)}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="col-span-2 sm:col-span-1 shadow-sm border-gray-200/60">
-                <CardHeader className="pb-2 px-4 pt-4">
-                  <CardTitle className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Total Ganho
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <div className="text-2xl font-bold text-emerald-600">
-                    {formatCurrency(totalGanho)}
+                  <div className="p-5 flex flex-col items-center justify-center bg-emerald-50/30">
+                    <span className="text-xs font-bold text-emerald-600/80 uppercase tracking-wider mb-1 text-center">
+                      Meu Ganho Total
+                    </span>
+                    <span className="text-3xl font-bold text-emerald-600">
+                      {formatCurrency(totalGanho)}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="col-span-2 sm:col-span-1 shadow-sm border-gray-200/60">
-                <CardHeader className="pb-2 px-4 pt-4">
-                  <CardTitle className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Qtd de Serviços
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <div className="text-2xl font-bold text-gray-800">{quantidadeServicos}</div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm border-gray-200/60">
-                <CardHeader className="pb-2 px-4 pt-4">
-                  <CardTitle className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Unhas (60%)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <div className="text-xl font-bold text-gray-800">
-                    {formatCurrency(nailsEarnings)}
+                </div>
+                <div className="grid grid-cols-2 divide-x bg-white">
+                  <div className="p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Comissão Unhas (60%)
+                    </span>
+                    <span className="text-xl font-bold text-gray-800">
+                      {formatCurrency(nailsEarnings)}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm border-gray-200/60">
-                <CardHeader className="pb-2 px-4 pt-4">
-                  <CardTitle className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Sobrancelha (50%)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <div className="text-xl font-bold text-gray-800">
-                    {formatCurrency(eyebrowEarnings)}
+                  <div className="p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Comissão Sobrancelha (50%)
+                    </span>
+                    <span className="text-xl font-bold text-gray-800">
+                      {formatCurrency(eyebrowEarnings)}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Details Table */}
             <Card className="flex flex-col overflow-hidden shadow-sm border-gray-200/60">
