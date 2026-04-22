@@ -1,6 +1,7 @@
 export interface Client {
   id: string
-  name: string
-  phone: string
-  isPreference: boolean
+  nome: string
+  telefone: string
+  eh_preferencia: boolean
+  usuario_id: string
 }

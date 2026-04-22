@@ -13,8 +13,9 @@ import { Client } from '@/types'
 interface DeleteConfirmModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => Promise<void>
   client: Client | null
+  isDeleting?: boolean
 }
 
 export function DeleteConfirmModal({
@@ -22,6 +23,7 @@ export function DeleteConfirmModal({
   onClose,
   onConfirm,
   client,
+  isDeleting = false,
 }: DeleteConfirmModalProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -29,22 +31,32 @@ export function DeleteConfirmModal({
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl">Remover Cliente</AlertDialogTitle>
           <AlertDialogDescription className="text-base text-gray-500 mt-2">
-            Tem certeza que deseja remover <strong>{client?.name}</strong>? Esta ação não pode ser
+            Tem certeza que deseja remover <strong>{client?.nome}</strong>? Esta ação não pode ser
             desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-6 flex flex-col gap-3 sm:flex-row sm:space-x-0">
-          <AlertDialogCancel className="mt-0 sm:mt-0 h-12 rounded-xl flex-1">
+          <AlertDialogCancel className="mt-0 sm:mt-0 h-12 rounded-xl flex-1" disabled={isDeleting}>
             Voltar
           </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="mt-0 sm:mt-0 h-12 rounded-xl flex-1 bg-red-500 hover:bg-red-600 text-white"
-          >
-            Confirmar
-          </AlertDialogAction>
+          <ButtonAction onClick={onConfirm} isDeleting={isDeleting} />
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+function ButtonAction({ onClick, isDeleting }: { onClick: () => void; isDeleting: boolean }) {
+  return (
+    <AlertDialogAction
+      onClick={(e) => {
+        e.preventDefault()
+        onClick()
+      }}
+      className="mt-0 sm:mt-0 h-12 rounded-xl flex-1 bg-red-500 hover:bg-red-600 text-white"
+      disabled={isDeleting}
+    >
+      {isDeleting ? 'Removendo...' : 'Confirmar'}
+    </AlertDialogAction>
   )
 }

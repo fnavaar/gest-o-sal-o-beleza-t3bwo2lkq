@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Search, Plus, Sparkles, X } from 'lucide-react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { Search, Plus, Sparkles, X, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -8,15 +8,12 @@ import { Client } from '@/types'
 import { ClientCard } from '@/components/ClientCard'
 import { ClientFormModal } from '@/components/ClientFormModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
-
-const INITIAL_CLIENTS: Client[] = [
-  { id: '1', name: 'Mariana Silva', phone: '(11) 98765-4321', isPreference: true },
-  { id: '2', name: 'Beatriz Oliveira', phone: '(21) 97654-3210', isPreference: false },
-  { id: '3', name: 'Camila Santos', phone: '(31) 99988-7766', isPreference: true },
-  { id: '4', name: 'Amanda Costa', phone: '(41) 98877-6655', isPreference: false },
-]
+import { getClientes, createCliente, updateCliente, deleteCliente } from '@/services/clientes'
+import { useRealtime } from '@/hooks/use-realtime'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
+  const { user, signOut } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -26,41 +23,63 @@ export default function Index() {
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const loadData = useCallback(async () => {
+    try {
+      const data = await getClientes()
+      setClients(data as unknown as Client[])
+    } catch (error) {
+      toast.error('Erro ao carregar clientes')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setClients(INITIAL_CLIENTS)
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+    loadData()
+  }, [loadData])
+
+  useRealtime('clientes', () => {
+    loadData()
+  })
 
   const filteredClients = useMemo(() => {
     if (!search) return clients
     const lower = search.toLowerCase()
-    return clients.filter((c) => c.name.toLowerCase().includes(lower) || c.phone.includes(lower))
+    return clients.filter((c) => c.nome.toLowerCase().includes(lower) || c.telefone.includes(lower))
   }, [clients, search])
 
-  const handleSaveClient = (data: Omit<Client, 'id'>) => {
-    if (clientToEdit) {
-      setClients((prev) => prev.map((c) => (c.id === clientToEdit.id ? { ...data, id: c.id } : c)))
-      toast.success('Cliente atualizada com sucesso!')
-    } else {
-      const newClient = { ...data, id: Math.random().toString(36).substr(2, 9) }
-      setClients((prev) => [newClient, ...prev])
-      toast.success('Cliente adicionada com sucesso!')
+  const handleSaveClient = async (data: Omit<Client, 'id' | 'usuario_id'>) => {
+    try {
+      if (clientToEdit) {
+        await updateCliente(clientToEdit.id, data)
+        toast.success('Cliente atualizada com sucesso!')
+      } else {
+        await createCliente({ ...data, usuario_id: user?.id })
+        toast.success('Cliente adicionada com sucesso!')
+      }
+      setIsFormOpen(false)
+      setClientToEdit(null)
+    } catch (error) {
+      toast.error('Erro ao salvar cliente')
     }
-    setIsFormOpen(false)
-    setClientToEdit(null)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (clientToDelete) {
-      setClients((prev) => prev.filter((c) => c.id !== clientToDelete.id))
-      toast.success('Cliente removida com sucesso!')
+      try {
+        setIsDeleting(true)
+        await deleteCliente(clientToDelete.id)
+        toast.success('Cliente removida com sucesso!')
+        setIsDeleteOpen(false)
+        setClientToDelete(null)
+      } catch (error) {
+        toast.error('Erro ao remover cliente')
+      } finally {
+        setIsDeleting(false)
+      }
     }
-    setIsDeleteOpen(false)
-    setClientToDelete(null)
   }
 
   const openAdd = () => {
@@ -81,7 +100,17 @@ export default function Index() {
   return (
     <>
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-5 py-4 flex flex-col gap-4 shadow-sm">
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Minhas Clientes</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Minhas Clientes</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={signOut}
+            className="text-gray-400 hover:text-red-500"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
           <Input
@@ -172,6 +201,7 @@ export default function Index() {
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={confirmDelete}
         client={clientToDelete}
+        isDeleting={isDeleting}
       />
     </>
   )

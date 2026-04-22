@@ -24,41 +24,45 @@ import { formatPhone } from '@/lib/utils'
 import { Client } from '@/types'
 
 const formSchema = z.object({
-  name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres'),
-  phone: z.string().min(14, 'Telefone incompleto'),
-  isPreference: z.boolean().default(false),
+  nome: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres'),
+  telefone: z.string().min(14, 'Telefone incompleto'),
+  eh_preferencia: z.boolean().default(false),
 })
 
 interface ClientFormModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (client: Omit<Client, 'id'>) => void
+  onSave: (client: Omit<Client, 'id' | 'usuario_id'>) => Promise<void>
   client?: Client | null
 }
 
 export function ClientFormModal({ isOpen, onClose, onSave, client }: ClientFormModalProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: '', phone: '', isPreference: false },
+    defaultValues: { nome: '', telefone: '', eh_preferencia: false },
   })
 
   useEffect(() => {
     if (isOpen) {
       if (client) {
-        form.reset({ name: client.name, phone: client.phone, isPreference: client.isPreference })
+        form.reset({
+          nome: client.nome,
+          telefone: client.telefone,
+          eh_preferencia: client.eh_preferencia,
+        })
       } else {
-        form.reset({ name: '', phone: '', isPreference: false })
+        form.reset({ nome: '', telefone: '', eh_preferencia: false })
       }
     }
   }, [isOpen, client, form])
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    onSave(values)
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    await onSave(values)
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value)
-    form.setValue('phone', formatted, { shouldValidate: true })
+    form.setValue('telefone', formatted, { shouldValidate: true })
   }
 
   return (
@@ -73,7 +77,7 @@ export function ClientFormModal({ isOpen, onClose, onSave, client }: ClientFormM
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="nome"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="uppercase text-xs font-bold text-gray-500">
@@ -88,7 +92,7 @@ export function ClientFormModal({ isOpen, onClose, onSave, client }: ClientFormM
             />
             <FormField
               control={form.control}
-              name="phone"
+              name="telefone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="uppercase text-xs font-bold text-gray-500">
@@ -108,7 +112,7 @@ export function ClientFormModal({ isOpen, onClose, onSave, client }: ClientFormM
             />
             <FormField
               control={form.control}
-              name="isPreference"
+              name="eh_preferencia"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-4 shadow-sm">
                   <div className="space-y-0.5">
@@ -135,9 +139,9 @@ export function ClientFormModal({ isOpen, onClose, onSave, client }: ClientFormM
               <Button
                 type="submit"
                 className="h-12 rounded-xl flex-1 sm:flex-none bg-primary text-white hover:bg-primary/90"
-                disabled={!form.formState.isValid}
+                disabled={!form.formState.isValid || form.formState.isSubmitting}
               >
-                Salvar
+                {form.formState.isSubmitting ? 'Salvando...' : 'Salvar'}
               </Button>
             </DialogFooter>
           </form>

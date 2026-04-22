@@ -14,8 +14,8 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
     <div className="p-4 mb-3 bg-white border border-gray-100 shadow-sm rounded-2xl flex items-center justify-between animate-fade-in-up transition-all hover:shadow-md">
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-gray-800 text-lg leading-tight">{client.name}</span>
-          {client.isPreference && (
+          <span className="font-bold text-gray-800 text-lg leading-tight">{client.nome}</span>
+          {client.eh_preferencia && (
             <Badge
               variant="secondary"
               className="bg-[#D4AF37]/15 text-[#b59325] hover:bg-[#D4AF37]/25 border-none px-2 py-0.5 h-5 text-[10px] uppercase tracking-wider font-bold"
@@ -25,7 +25,7 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
             </Badge>
           )}
         </div>
-        <span className="text-gray-500 text-sm font-medium">{client.phone}</span>
+        <span className="text-gray-500 text-sm font-medium">{client.telefone}</span>
       </div>
       <div className="flex items-center gap-1">
         <Button
