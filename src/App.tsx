@@ -8,6 +8,7 @@ import Layout from './components/Layout'
 import NewService from './pages/NewService'
 import Login from './pages/Login'
 import Balanco from './pages/Balanco'
+import HistoricoClientes from './pages/HistoricoClientes'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/registrar-servico" element={<NewService />} />
             <Route path="/balanco" element={<Balanco />} />
+            <Route path="/historico-clientes" element={<HistoricoClientes />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

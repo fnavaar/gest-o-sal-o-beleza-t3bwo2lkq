@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Home, PlusCircle, Wallet } from 'lucide-react'
+import { Home, PlusCircle, Wallet, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Layout() {
@@ -48,6 +48,18 @@ export default function Layout() {
           >
             <Wallet className="w-5 h-5" />
             Balanço
+          </Link>
+          <Link
+            to="/historico-clientes"
+            className={cn(
+              'flex flex-col items-center gap-1 text-xs transition-colors',
+              location.pathname === '/historico-clientes'
+                ? 'text-primary font-medium'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <Users className="w-5 h-5" />
+            Histórico
           </Link>
         </nav>
       </div>
