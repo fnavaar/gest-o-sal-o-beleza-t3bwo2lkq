@@ -12,8 +12,10 @@ export interface ClienteRecord {
 
 export const getClientes = () =>
   pb.collection('clientes').getFullList<ClienteRecord>({ sort: '-created' })
-export const createCliente = (data: Omit<ClienteRecord, 'id' | 'created' | 'updated'>) =>
-  pb.collection('clientes').create<ClienteRecord>(data)
-export const updateCliente = (id: string, data: Partial<ClienteRecord>) =>
-  pb.collection('clientes').update<ClienteRecord>(id, data)
+export const createCliente = async (data: Omit<ClienteRecord, 'id' | 'created' | 'updated'>) => {
+  return await pb.collection('clientes').create<ClienteRecord>(data)
+}
+export const updateCliente = async (id: string, data: Partial<ClienteRecord>) => {
+  return await pb.collection('clientes').update<ClienteRecord>(id, data)
+}
 export const deleteCliente = (id: string) => pb.collection('clientes').delete(id)

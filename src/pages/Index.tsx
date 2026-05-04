@@ -11,6 +11,7 @@ import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 import { getClientes, createCliente, updateCliente, deleteCliente } from '@/services/clientes'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
+import { extractFieldErrors, getErrorMessage } from '@/lib/pocketbase/errors'
 
 export default function Index() {
   const { user, signOut } = useAuth()
@@ -53,16 +54,28 @@ export default function Index() {
   const handleSaveClient = async (data: Omit<Client, 'id' | 'usuario_id'>) => {
     try {
       if (clientToEdit) {
-        await updateCliente(clientToEdit.id, data)
+        await updateCliente(clientToEdit.id, {
+          nome: data.nome,
+          telefone: data.telefone,
+          eh_preferencia: data.eh_preferencia,
+        })
         toast.success('Cliente atualizada com sucesso!')
       } else {
-        await createCliente({ ...data, usuario_id: user?.id })
+        if (!user?.id) throw new Error('Usuário não autenticado')
+
+        await createCliente({
+          nome: data.nome,
+          telefone: data.telefone,
+          eh_preferencia: data.eh_preferencia || false,
+          usuario_id: user.id,
+        })
         toast.success('Cliente adicionada com sucesso!')
       }
       setIsFormOpen(false)
       setClientToEdit(null)
     } catch (error) {
-      toast.error('Erro ao salvar cliente')
+      const msg = getErrorMessage(error)
+      toast.error(`Erro ao salvar cliente: ${msg}`)
     }
   }
 

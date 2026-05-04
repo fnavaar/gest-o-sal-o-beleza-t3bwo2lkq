@@ -57,7 +57,11 @@ export function ClientFormModal({ isOpen, onClose, onSave, client }: ClientFormM
   }, [isOpen, client, form])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    await onSave(values)
+    await onSave({
+      nome: values.nome.trim(),
+      telefone: values.telefone.trim(),
+      eh_preferencia: values.eh_preferencia,
+    } as any)
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
